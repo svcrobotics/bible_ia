@@ -1,0 +1,13 @@
+<h1 class="text-2xl font-bold text-indigo-800 mb-4">Votre intention</h1>
+
+<p class="mb-6 p-4 bg-white rounded shadow text-gray-800">
+  <%= @message.contenu %>
+</p>
+
+<h2 class="text-xl font-semibold text-green-700 mb-2">Réponse IA</h2>
+
+<p class="whitespace-pre-line p-4 bg-gray-50 border border-green-200 rounded text-gray-700">
+  <%= @message.reponse %>
+</p>
+
+<%= link_to "Retour", messages_path, class: "mt-4 inline-block text-indigo-600 hover:underline" %>
