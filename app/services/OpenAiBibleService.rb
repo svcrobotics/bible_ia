@@ -1,8 +1,10 @@
 # app/services/open_ai_bible_service.rb
 class OpenAiBibleService
   COUT_PAR_1000_TOKENS = {
-    "gpt-4" => 0.03 # coût estimé pour la sortie en dollars
+    "gpt-4o-mini" => 0.03 # coût estimé pour la sortie en dollars
   }
+  MODEL = "gpt-4o-mini"
+  CONFIG_PATH = Rails.root.join("config/api_balance.yml")
 
   def self.repondre_avec_consolation(message)
     client = OpenAI::Client.new
@@ -26,7 +28,7 @@ class OpenAiBibleService
 
     response = client.chat(
       parameters: {
-        model: "gpt-4",
+        model: MODEL,
         messages: [{ role: "user", content: prompt }],
         temperature: 0.7,
         max_tokens: 300
@@ -34,13 +36,17 @@ class OpenAiBibleService
     )
 
     texte = response.dig("choices", 0, "message", "content")&.strip || ""
+    tokens = response.dig("usage", "total_tokens").to_i
+    cout = ((tokens * COUT_PAR_1000_TOKENS[MODEL]) / 1000.0).round(4)
+    maj_balance(cout)
 
     {
       evangile: texte[/\[EVANGILE\](.*?)\[REPONSE\]/m, 1]&.strip || "📖 Aucun verset trouvé.",
       inspire:  texte[/\[REPONSE\](.*?)\[EMMET\]/m, 1]&.strip || "✨ Réponse manquante.",
       fox:      texte[/\[EMMET\](.*)/m, 1]&.strip || "🕊️ Méditation manquante.",
-      tokens:   response.dig("usage", "total_tokens") || 0,
-      cout:     ((response.dig("usage", "total_tokens").to_i * COUT_PAR_1000_TOKENS["gpt-4"]) / 1000.0).round(4)
+      tokens: response.dig("usage", "total_tokens").to_i,
+      cout:   ((response.dig("usage", "total_tokens").to_i * (COUT_PAR_1000_TOKENS[MODEL] || 0)) / 1000.0).round(4),
+      balance: balance_actuelle
     }
 
   rescue => e
@@ -49,7 +55,18 @@ class OpenAiBibleService
       inspire: "",
       fox: "⚠️ Erreur IA : #{e.message}",
       tokens: 0,
-      cout: 0
+      cout: 0,
+      balance: balance_actuelle
     }
+  end
+
+  def self.balance_actuelle
+    YAML.load_file(CONFIG_PATH)["openai_balance_dollars"].to_f
+  end
+
+  def self.maj_balance(cout)
+    nouvelle_balance = balance_actuelle - cout
+    data = { "openai_balance_dollars" => nouvelle_balance.round(4) }
+    File.open(CONFIG_PATH, 'w') { |f| f.write(data.to_yaml) }
   end
 end

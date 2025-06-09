@@ -5,6 +5,7 @@ class MessagesController < ApplicationController
   def index
     @messages = Message.order(created_at: :desc)
     @message = Message.new
+    @balance_api = OpenAiBibleService.balance_actuelle
   end
 
   

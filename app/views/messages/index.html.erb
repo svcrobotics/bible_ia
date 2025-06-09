@@ -1,4 +1,7 @@
 <div class="max-w-3xl mx-auto py-10 px-4 space-y-10">
+  <div class="bg-yellow-100 border border-yellow-300 text-yellow-800 px-4 py-2 rounded mb-4 text-sm">
+    💰 <strong>Crédit API restant :</strong> <%= number_to_currency(@balance_api, unit: "$", precision: 4) %>
+  </div>
 
   <!-- Titre principal -->
   <h1 class="text-3xl font-bold text-center text-gray-900">
