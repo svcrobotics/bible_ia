@@ -7,29 +7,43 @@ class MessagesController < ApplicationController
     @message = Message.new
   end
 
+  
   def create
     @message = Message.new(message_params)
 
-    mots_cles = MatthieuService.extraire_mots_cles(@message.contenu)
-    flash.now[:notice] = "🔎 Mots-clés extraits : #{mots_cles.join(', ')}"
-
     if @message.save
-      verset = MatthieuService.trouver_verset(@message.contenu)
-      citation = EmmetFoxService.random
+      result = OpenAiBibleService.repondre_avec_consolation(@message.contenu)
+
+      reponse_complete = <<~REPONSE
+        📖 Parole de l'Évangile
+
+        #{result[:evangile]}
+
+        ✨ Réponse inspirée
+
+        #{result[:inspire]}
+
+        🕊️ Méditation d'Emmet Fox
+
+        #{result[:fox]}
+      REPONSE
 
       @message.update(
-        reponse: "📖 #{verset[:reference]} : « #{verset[:texte]} »\n\n💬 Emmet Fox : #{citation['texte']}"
+        reponse: reponse_complete.strip,
+        reponse_evangile: result[:evangile],
+        reponse_inspiree: result[:inspire],
+        reponse_fox: result[:fox],
+        tokens_utilises: result[:tokens],
+        cout: result[:cout]
       )
 
-      redirect_to messages_path  # 👈 redirection classique avec rechargement complet
+
+      redirect_to messages_path, notice: "🙏 Message enregistré et réponse générée."
     else
       @messages = Message.order(created_at: :desc)
       render :index
     end
   end
-
-
-
 
   # GET /messages/1 or /messages/1.json
   def show
@@ -79,24 +93,6 @@ class MessagesController < ApplicationController
       params.require(:message).permit(:contenu)
     end
 
-    def generer_reponse_ia(texte)
-      client = OpenAI::Client.new
-      prompt = <<~PROMPT
-        Tu es un guide spirituel bienveillant et éclairé. Quel passage de l’Évangile (de Matthieu) correspond le mieux au message suivant : "#{texte}" ?
-        Puis, donne une interprétation inspirée d'Emmet Fox à propos de ce passage.
-      PROMPT
-
-      response = client.chat(
-        parameters: {
-          model: "gpt-4", # ou "gpt-3.5-turbo"
-          messages: [{ role: "user", content: prompt }],
-          temperature: 0.7
-        }
-      )
-
-      response.dig("choices", 0, "message", "content")
-    rescue => e
-      "⚠️ Erreur lors de l’appel à l’IA : #{e.message}"
-    end
+    
 
 end

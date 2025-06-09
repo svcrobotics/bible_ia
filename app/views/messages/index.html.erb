@@ -1,22 +1,23 @@
-<div class="max-w-2xl mx-auto py-8 px-4">
+<div class="max-w-3xl mx-auto py-10 px-4 space-y-10">
 
   <!-- Titre principal -->
-  <h1 class="text-2xl font-bold text-center text-gray-800 mb-6">
-    Écrivez une prière ou une intention
+  <h1 class="text-3xl font-bold text-center text-gray-900">
+    ✨ Écrivez votre prière ou intention
   </h1>
 
+  <!-- Flash -->
   <% if flash[:notice] %>
-    <div class="bg-yellow-100 text-yellow-800 font-medium px-4 py-2 rounded mb-4">
+    <div class="bg-green-100 text-green-800 font-medium px-4 py-2 rounded shadow">
       <%= flash[:notice] %>
     </div>
   <% end %>
 
   <!-- Formulaire -->
-  <div class="bg-white shadow-md rounded-lg p-6 mb-8">
+  <div class="bg-white border border-gray-200 shadow-md rounded-xl p-6">
     <%= form_with model: @message, url: messages_path, local: true do |form| %>
       <div class="mb-4">
-        <%= form.label :contenu, "Votre message", class: "block text-gray-700 font-medium mb-2" %>
-        <%= form.text_area :contenu, rows: 4, class: "w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring focus:ring-blue-200" %>
+        <%= form.label :contenu, "🙏 Votre message", class: "block text-gray-700 font-semibold mb-2" %>
+        <%= form.text_area :contenu, rows: 4, class: "w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-200" %>
       </div>
       <div class="text-right">
         <%= form.submit "Envoyer", class: "bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg shadow" %>
@@ -24,43 +25,58 @@
     <% end %>
   </div>
 
-  <!-- Citation affichée -->
-  <% if @citation %>
-    <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-900 p-4 rounded-lg mb-6 shadow-sm">
-      <p class="italic">💬 <%= @citation["texte"] %></p>
-    </div>
-  <% end %>
-
   <!-- Liste des messages précédents -->
-  <h2 class="text-xl font-semibold text-gray-800 mb-4">📜 Intentions précédentes</h2>
-  <div class="space-y-4">
+  <div class="space-y-6">
+    <h2 class="text-xl font-semibold text-gray-800 border-b pb-2">📜 Intentions précédentes</h2>
+
     <% @messages.each do |message| %>
-      <div class="bg-white shadow-md rounded-xl p-4 mb-4">
-        <p class="text-gray-700 mb-2">
-          <span class="font-semibold">🙏 Intention :</span>
+      <div class="bg-gray-50 border border-gray-200 rounded-xl shadow-sm p-5 space-y-4">
+
+        <!-- Intention -->
+        <p class="text-gray-800">
+          <span class="font-semibold text-indigo-600">🙏 Intention :</span>
           <%= message.contenu %>
         </p>
 
-        <div class="border-l-4 border-blue-500 pl-4 mb-3">
-          <% if message.reponse.present? && message.reponse.include?("💬") %>
-            <% evangile, fox = message.reponse.split("💬", 2) %>
+        <% if message.reponse.present? %>
+          <div class="bg-white border border-blue-100 rounded-lg p-4 space-y-4">
 
-            <p class="text-blue-700 font-semibold mb-1">📖 Évangile de Matthieu</p>
-            <p class="text-gray-800 mb-2"><%= simple_format(evangile.strip) %></p>
+            <!-- Évangile -->
+            <% if message.reponse_evangile.present? %>
+              <div>
+                <p class="text-blue-700 font-semibold mb-1">📖 Parole de l'Évangile</p>
+                <p class="text-gray-800 whitespace-pre-line"><%= simple_format(message.reponse_evangile) %></p>
+              </div>
+            <% end %>
 
-            <p class="text-green-700 font-semibold mb-1">💬 Emmet Fox</p>
-            <p class="text-gray-800"><%= simple_format(fox.strip) %></p>
-          <% else %>
-            <p class="text-gray-800"><%= simple_format(message.reponse) %></p>
+            <!-- Réponse inspirée -->
+            <% if message.reponse_inspiree.present? %>
+              <div>
+                <p class="text-purple-700 font-semibold mb-1">✨ Réponse inspirée</p>
+                <p class="text-gray-800 whitespace-pre-line"><%= simple_format(message.reponse_inspiree) %></p>
+              </div>
+            <% end %>
+
+            <!-- Emmet Fox -->
+            <% if message.reponse_fox.present? %>
+              <div>
+                <p class="text-green-700 font-semibold mb-1">🕊️ Méditation d’Emmet Fox</p>
+                <p class="text-gray-800 italic whitespace-pre-line"><%= simple_format(message.reponse_fox) %></p>
+              </div>
+            <% end %>
+
+          </div>
+        <% end %>
+
+        <!-- Footer -->
+        <div class="text-sm text-gray-500 text-right">
+          🗓️ Posté le <%= l(message.created_at, format: :long) %>
+          <% if message.tokens_utilises && message.cout %>
+            • 💬 <%= message.tokens_utilises %> tokens – 💲<%= number_with_precision(message.cout, precision: 4) %>
           <% end %>
         </div>
-
-        <p class="text-sm text-gray-500 text-right">
-          🕊️ Posté le <%= l(message.created_at, format: :long) %>
-        </p>
       </div>
     <% end %>
-
   </div>
 
 </div>
